@@ -198,7 +198,10 @@ function Get-SOPHOSPartnerEndpointsAllTenants{
         # Write-Host($TenantEndpointResult.items | Out-GridView)
 
         # Build the query, Output of Assigned Products needs cleaning
-        $AllTenantEndpoints = $AllTenantEndpointResult.items |
+        $AllTenantEndpoints = $AllTenantEndpointResult.items | 
+        ? { (!$HostName) -or ($_.hostname -match $HostName)} |
+        ? { (!$OverallHealth) -or ($_.Health.overall -eq $OverallHealth)} |
+        ? { (!$TamperProtection) -or ($_.tamperProtectionEnabled -match "$TamperProtection")} |
         ConvertTo-Json
 
         if ($AllTenantEndpoints){
@@ -217,7 +220,7 @@ function Show-Menu {
     Write-Host ""
     Write-Host "1: Get Sophos Central API Token"
     Write-Host "2: Set Customer Tenant"
-    Write-Host "3: View All Partner Endpoints"
+    Write-Host "3: Search for Endpoint"
     Write-Host "Q: Press 'Q' to quit."
 }
 
