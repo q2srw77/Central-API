@@ -128,12 +128,13 @@ function Get-SOPHOSPartnerEndpointsAllTenants{
         # Write-Host($TenantEndpointResult.items | Out-GridView)
 
         # Build the query
-        $EndpointTenantSearch = $AllTenantEndpointResult.items | ? {($_.hostname -match $HostName)}
+        $EndpointTenantSearch = $AllTenantEndpointResult.items | ? {($_.hostname -match $computername)}
         if ($EndpointTenantSearch.hostname -eq $computername) {
         $EndpointTenantID = $EndpointTenantSearch
         }
         
         }
+
         #Build Search Output
         if ($EndpointTenantID.hostname -eq $computername) {
             $TenantID = ($EndpointTenantID.tenant -replace ‘[@{id=}]’)
