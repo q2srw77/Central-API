@@ -95,80 +95,8 @@ function Get-SOPHOSTokenExpiry{
     }
 }
 
-function Set-SOPHOSPartnerTenant{
-
-    # Before the function runs check the token expiry and regenerate if needed
-    Get-SOPHOSTokenExpiry
-
-	# SOPHOS Whoami URI
-	$PartnerTenantURI = "https://api.central.sophos.com/partner/v1/tenants?pageTotal=true"
-	
-    # SOPHOS Whoami Headers
-    $PartnerTenantHeaders = @{
-        "Authorization" = "Bearer $global:Token";
-        "X-Partner-ID" = "$global:ApiPartnerId";
-    }
-	
-    # Set TLS Version
-    [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
-
-	# Post Request to SOPHOS for Whoami Details
-	$PartnerTenantResult = (Invoke-RestMethod -Method Get -Uri $PartnerTenantURI -Headers $PartnerTenantHeaders -ErrorAction SilentlyContinue -ErrorVariable Error)
-    
-    # Display List of Partners, gridview with passthough makes it selectable.
-    $SelectedPartner = $PartnerTenantResult.items | Out-GridView -PassThru -Title "Sophos Central Customers"
-
-    # We need the Token, TennantID and APIHost
-    $global:PartnerId = $SelectedPartner.id
-    $global:PartnerApiHost = $SelectedPartner.apiHost
-    $global:PartnerName = $SelectedPartner.name
-    Write-Host("$global:PartnerName has been selected")
-
-}
-
-function Get-SOPHOSPartnerTenants{
-
-    # Before the function runs check the token expiry and regenerate if needed
-    Get-SOPHOSTokenExpiry
-
-	# SOPHOS Whoami URI
-	$PartnerTenantURI = "https://api.central.sophos.com/partner/v1/tenants?pageTotal=True"
-	
-    # SOPHOS Whoami Headers
-    $PartnerTenantHeaders = @{
-        "Authorization" = "Bearer $global:Token";
-        "X-Partner-ID" = "$global:ApiPartnerId";
-    }
-
-    # Set TLS Version
-    [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
-
-	# Post Request to SOPHOS Endpoint Gateway, This request is just used to get the pages (waste of a request I know)
-	$PartnerTenantResult = (Invoke-RestMethod -Method Get -Uri $PartnerTenantURI -Headers $PartnerTenantHeaders -ErrorAction SilentlyContinue -ErrorVariable Error)
-    
-    # Check them all into this collection
-    $AllPartnerTenantResults = @()
-    
-    For ($i=1; $i -le $PartnerTenantResult.pages.total; $i++) {
-        $PartnerTenantURI = "https://api.central.sophos.com/partner/v1/tenants?pageTotal=True&page=$i"
-        $AllPartnerTenantResults += (Invoke-RestMethod -Method Get -Uri $PartnerTenantURI -Headers $PartnerTenantHeaders -ErrorAction SilentlyContinue -ErrorVariable Error)
-    }
-
-    $global:PartnerTenants = $AllPartnerTenantResults.items | Select -Property id, name, apiHost
-
-}
 
 function Get-SOPHOSPartnerEndpointsAllTenants{
-    param (
-        [ValidateSet(“good”,”suspicious”,”bad”)]
-        [string]$OverallHealth = $null,
-        [string]$HostName = $null,
-        [ValidateSet(“JSON”,”CSV”)]
-        [string]$Export = "JSON",
-        [ValidateSet(“true”,”false”)]
-        [string]$TamperProtection = $null
-    )
-
     # Before the function runs check the token expiry and regenerate if needed
     Get-SOPHOSTokenExpiry
 	
@@ -178,8 +106,10 @@ function Get-SOPHOSPartnerEndpointsAllTenants{
     # Set TLS Version
     [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
 
+    #Set Partner Tenant URI
+            $PartnerTenantURI = "https://api.central.sophos.com/partner/v1/tenants"
 
-	
+    
     foreach ($tenant in $global:PartnerTenants) {
         
         $apihost = $tenant.apiHost
@@ -197,12 +127,32 @@ function Get-SOPHOSPartnerEndpointsAllTenants{
         # All results for debugging
         # Write-Host($TenantEndpointResult.items | Out-GridView)
 
-        # Build the query, Output of Assigned Products needs cleaning
-        $EndpointTenantID = $AllTenantEndpointResult.items | ? { (!$HostName) -or ($_.hostname -match $HostName)}
+        # Build the query
+        $EndpointTenantSearch = $AllTenantEndpointResult.items | ? {($_.hostname -match $HostName)}
+        if ($EndpointTenantSearch.hostname -eq $computername) {
+        $EndpointTenantID = $EndpointTenantSearch
+        }
         
-       
-        Write-host $EndpointTenantID.tenant
-    }
+        }
+        #Build Search Output
+        if ($EndpointTenantID.hostname -eq $computername) {
+            $TenantID = ($EndpointTenantID.tenant -replace ‘[@{id=}]’)
+            Write-host "Computer Name: $computername"
+            Write-Host "Tenant: $TenantID"
+            
+            # SOPHOS Whoami Headers
+            $PartnerTenantHeaders = @{
+            "Authorization" = "Bearer $global:Token";
+            "X-Partner-ID" = "$global:ApiPartnerId";
+            }
+
+            #Tenant Name Results
+            $PartnerTenantResult = (Invoke-RestMethod -Method Get -Uri $PartnerTenantURI -Headers $PartnerTenantHeaders -ErrorAction SilentlyContinue -ErrorVariable Error)
+            $TenantName = $PartnerTenantResult.items | ? {($_.id -match "$TenantID")}
+            write-host "Tenant Name: $TenantName"
+        }
+        else {
+        Write-Host "Computer not found" }
 }
 
 
@@ -214,8 +164,7 @@ function Show-Menu {
     Write-Host "================ $Title ================"
     Write-Host ""
     Write-Host "1: Get Sophos Central API Token"
-    Write-Host "2: Set Customer Tenant"
-    Write-Host "3: Search for Endpoint"
+    Write-Host "2: Search for Endpoint"
     Write-Host "Q: Press 'Q' to quit."
 }
 
@@ -229,8 +178,6 @@ do
     '1' {
     Set-SOPHOSCredentials
     } '2' {
-    Set-SOPHOSPartnerTenant
-    } '3' {
     $computername = Read-Host -Prompt 'Enter the Computer Name your looking for'
     Get-SOPHOSPartnerEndpointsAllTenants -hostname $computername
     }
