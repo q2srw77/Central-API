@@ -95,6 +95,37 @@ function Get-SOPHOSTokenExpiry{
     }
 }
 
+function Get-SOPHOSPartnerTenants{
+
+    # Before the function runs check the token expiry and regenerate if needed
+    Get-SOPHOSTokenExpiry
+
+	# SOPHOS Whoami URI
+	$PartnerTenantURI = "https://api.central.sophos.com/partner/v1/tenants?pageTotal=True"
+	
+    # SOPHOS Whoami Headers
+    $PartnerTenantHeaders = @{
+        "Authorization" = "Bearer $global:Token";
+        "X-Partner-ID" = "$global:ApiPartnerId";
+    }
+
+    # Set TLS Version
+    [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
+
+	# Post Request to SOPHOS Endpoint Gateway, This request is just used to get the pages (waste of a request I know)
+	$PartnerTenantResult = (Invoke-RestMethod -Method Get -Uri $PartnerTenantURI -Headers $PartnerTenantHeaders -ErrorAction SilentlyContinue -ErrorVariable Error)
+    
+    # Check them all into this collection
+    $AllPartnerTenantResults = @()
+    
+    For ($i=1; $i -le $PartnerTenantResult.pages.total; $i++) {
+        $PartnerTenantURI = "https://api.central.sophos.com/partner/v1/tenants?pageTotal=True&page=$i"
+        $AllPartnerTenantResults += (Invoke-RestMethod -Method Get -Uri $PartnerTenantURI -Headers $PartnerTenantHeaders -ErrorAction SilentlyContinue -ErrorVariable Error)
+    }
+
+    $global:PartnerTenants = $AllPartnerTenantResults.items | Select -Property id, name, apiHost
+
+}
 
 function Get-SOPHOSPartnerEndpointsAllTenants{
     # Before the function runs check the token expiry and regenerate if needed
