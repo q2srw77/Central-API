@@ -145,46 +145,41 @@ function Get-SOPHOSPartnerEndpointsAllTenants{
         
         $apihost = $tenant.apiHost
         $tenantid = $tenant.id
+        $tenantname = $tenant.name
 
-        # SOPHOS Customer Tenant API Headers:
+         # SOPHOS Customer Tenant API Headers:
         $TentantAPIHeaders = @{
             "Authorization" = "Bearer $global:Token";
             "X-Tenant-ID" = "$tenantid";
         }
         if ($apihost -ne $null){
 	        # Post Request to SOPHOS for Endpoint API:
-	        $AllTenantEndpointResult = (Invoke-RestMethod -Method Get -Uri $apiHost"/endpoint/v1/endpoints" -Headers $TentantAPIHeaders -ErrorAction SilentlyContinue -ErrorVariable Error)
+	        $AllTenantEndpointResult = (Invoke-RestMethod -Method Get -Uri $apiHost"/endpoint/v1/endpoints" -Headers $TentantAPIHeaders -ErrorAction SilentlyContinue -ErrorVariable Error )
         }
-        # All results for debugging
-        # Write-Host($TenantEndpointResult.items | Out-GridView)
 
         # Build the query
         $EndpointTenantSearch = $AllTenantEndpointResult.items | ? {($_.hostname -match $computername)}
         if ($EndpointTenantSearch.hostname -eq $computername) {
-        $EndpointTenantID = $EndpointTenantSearch
+            # This should speed up the script and fix the problem.
+            # This removes the need for the next conditional statement.
+            # If the computer is found, it uses the $tenantname and $tenantid variable within the existing loop
+            # If more tenant information is needed add the additional items on line 126 from the intial partner list
+            # The break statement kills the loop.
+            Write-host ""
+			Write-host "***********************"
+			Write-host "Computer Name: $computername"  -ForegroundColor Green
+			Write-host ""
+			Write-host "TenantName: $TenantName"  -ForegroundColor Green
+			Write-host ""
+			Write-host "TenantID: $TenantID" -ForegroundColor Green
+            Write-host "***********************"
+			#Write-host "0xBennyV was here 2020"
+            break
         }
         
-        }
+    }
 
-        #Build Search Output
-        if ($EndpointTenantID.hostname -eq $computername) {
-            $TenantID = ($EndpointTenantID.tenant -replace ‘[@{id=}]’)
-            Write-host "Computer Name: $computername"
-            Write-Host "Tenant: $TenantID"
-            
-            # SOPHOS Whoami Headers
-            $PartnerTenantHeaders = @{
-            "Authorization" = "Bearer $global:Token";
-            "X-Partner-ID" = "$global:ApiPartnerId";
-            }
 
-            #Tenant Name Results
-            $PartnerTenantResult = (Invoke-RestMethod -Method Get -Uri $PartnerTenantURI -Headers $PartnerTenantHeaders -ErrorAction SilentlyContinue -ErrorVariable Error)
-            $TenantName = $PartnerTenantResult.items | ? {($_.id -match "$TenantID")}
-            write-host "Tenant Name: $TenantName"
-        }
-        else {
-        Write-Host "Computer not found" }
 }
 
 
@@ -210,7 +205,8 @@ do
     '1' {
     Set-SOPHOSCredentials
     } '2' {
-    $computername = Read-Host -Prompt 'Enter the Computer Name your looking for'
+    Write-host ""
+	$computername = Read-Host -Prompt 'Enter the Computer Name your looking for'
     Get-SOPHOSPartnerEndpointsAllTenants -hostname $computername
     }
     }
