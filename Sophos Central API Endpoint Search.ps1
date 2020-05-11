@@ -219,7 +219,7 @@ do
     Set-SOPHOSCredentials
     } '2' {
     Write-host ""
-	$computername = Read-Host -Prompt 'Enter the Computer Name your looking for'
+	$computername = Read-Host -Prompt 'Enter the Full or Partial Computer Name your looking for'
     Get-SOPHOSPartnerEndpointsAllTenants -hostname $computername
     }
     }
