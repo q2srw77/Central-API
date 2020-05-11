@@ -169,14 +169,20 @@ function Get-SOPHOSPartnerEndpointsAllTenants{
             # The break statement kills the loop.
             foreach ($hostname in $EndpointTenantSearch) {
             $computer = $hostname.hostname
+            $tamperprotection = $hostname.tamperProtectionEnabled
+            $person = $hostname.associatedPerson | Select-Object -ExpandProperty viaLogin
             Write-host ""
 			Write-host "***********************"
 			Write-host ""
 			Write-host "Computer Name: $computer"  -ForegroundColor Green
 			Write-host ""
+            Write-host "User: $person"  -ForegroundColor Green
+            Write-host ""
 			Write-host "TenantName: $TenantName"  -ForegroundColor Green
 			Write-host ""
-			# Write-host "TenantID: $TenantID" -ForegroundColor Green
+			Write-host "Tamper Protection Enabled: $tamperprotection" -ForegroundColor Green
+            Write-host ""
+            # Write-host "TenantID: $TenantID" -ForegroundColor Green
             Write-host "***********************"
             }
 			#Write-host "0xBennyV was here 2020"
