@@ -205,6 +205,7 @@ function Show-Menu {
     Write-Host ""
     Write-Host "1: Get Sophos Central API Token"
     Write-Host "2: Search for Endpoint"
+	Write-Host "3: Delete Token"
     Write-Host "Q: Press 'Q' to quit."
 }
 
@@ -221,7 +222,14 @@ do
     Write-host ""
 	$computername = Read-Host -Prompt 'Enter the Full or Partial Computer Name your looking for'
     Get-SOPHOSPartnerEndpointsAllTenants -hostname $computername
-    }
+    } '3' {
+	 if ((Test-Path c:\SophosCentral\sophos_partner_secureaccess.json) -eq $true){
+        Remove-item c:\SophosCentral\sophos_partner_secureaccess.json
+		Write-host ""
+		Write-host "***Sophos Central Token Deleted***" -foregroundcolor Green
+		Write-host ""
+        }
+	}
     }
     pause
  }
