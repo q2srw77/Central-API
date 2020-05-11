@@ -148,6 +148,7 @@ function Get-SOPHOSPartnerEndpointsAllTenants{
         $tenantname = $tenant.name
 
          # SOPHOS Customer Tenant API Headers:
+		 
         $TentantAPIHeaders = @{
             "Authorization" = "Bearer $global:Token";
             "X-Tenant-ID" = "$tenantid";
@@ -158,24 +159,36 @@ function Get-SOPHOSPartnerEndpointsAllTenants{
         }
 
         # Build the query
-        $EndpointTenantSearch = $AllTenantEndpointResult.items | ? {($_.hostname -match $computername)}
-        if ($EndpointTenantSearch.hostname -eq $computername) {
+        $EndpointTenantSearch = $AllTenantEndpointResult.items | ? {($_.hostname -like "*$computername*")}
+        
+        if ($EndpointTenantSearch.hostname -like "*$computername*") {
             # This should speed up the script and fix the problem.
             # This removes the need for the next conditional statement.
             # If the computer is found, it uses the $tenantname and $tenantid variable within the existing loop
             # If more tenant information is needed add the additional items on line 126 from the intial partner list
             # The break statement kills the loop.
+            foreach ($hostname in $EndpointTenantSearch) {
+            $computer = $hostname.hostname
             Write-host ""
 			Write-host "***********************"
-			Write-host "Computer Name: $computername"  -ForegroundColor Green
+			Write-host "Computer Name: $computer"  -ForegroundColor Green
 			Write-host ""
 			Write-host "TenantName: $TenantName"  -ForegroundColor Green
 			Write-host ""
 			Write-host "TenantID: $TenantID" -ForegroundColor Green
             Write-host "***********************"
+            }
 			#Write-host "0xBennyV was here 2020"
-            break
+            #break
         }
+        Else {
+            Write-host ""
+			Write-host "***********************"
+            Write-host "Tenant Name: $TenantName" -ForegroundColor Red
+            Write-host "Computer Not Found" -ForegroundColor Red
+            Write-host "***********************"
+            }
+            
         
     }
 
