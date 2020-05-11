@@ -171,11 +171,12 @@ function Get-SOPHOSPartnerEndpointsAllTenants{
             $computer = $hostname.hostname
             Write-host ""
 			Write-host "***********************"
+			Write-host ""
 			Write-host "Computer Name: $computer"  -ForegroundColor Green
 			Write-host ""
 			Write-host "TenantName: $TenantName"  -ForegroundColor Green
 			Write-host ""
-			Write-host "TenantID: $TenantID" -ForegroundColor Green
+			# Write-host "TenantID: $TenantID" -ForegroundColor Green
             Write-host "***********************"
             }
 			#Write-host "0xBennyV was here 2020"
