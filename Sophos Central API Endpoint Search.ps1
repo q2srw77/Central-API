@@ -3,12 +3,12 @@
 function Get-SOPHOSToken{
 
     # See if Config file has been setup, if it doesn't exists then run the Set-SOPHOSCredentials Function
-    if ((Test-Path c:\SophosCentral\sophos_partner_secureaccess.json) -eq $false){
+    if ((Test-Path $env:userprofile\sophos_partner_secureaccess.json) -eq $false){
         Set-SOPHOSCredentials
         }
     
     # Read JSON Config File
-    $credentials = Get-Content c:\SophosCentral\sophos_partner_secureaccess.json | ConvertFrom-Json
+    $credentials = Get-Content $env:userprofile\sophos_partner_secureaccess.json | ConvertFrom-Json
     $clientId = $credentials[0]
     $clientSecret = $credentials[1] | ConvertTo-SecureString
 
@@ -76,11 +76,17 @@ function Get-SOPHOSPartnerID{
 
 function Set-SOPHOSCredentials{
     # Prompt for Credentials
-    $clientId = Read-Host "Please Enter your Client ID"
+    # Prompt for Credentials
+    Write-host ""
+    Write-host "***********************"
+    Write-host ""
+    Write-host "Set your Sophos Central API Credentials"
+    Write-host ""
+	$clientId = Read-Host "Please Enter your Client ID"
     $clientSecret = Read-Host "Please Enter your Client Secret" -AsSecureString | ConvertFrom-SecureString
 
     # Out to JSON Config File
-    ConvertTo-Json $ClientID, $ClientSecret | Out-File c:\SophosCentral\sophos_partner_secureaccess.json -Force
+    ConvertTo-Json $ClientID, $ClientSecret | Out-File $env:userprofile\sophos_partner_secureaccess.json -Force
 
     # Run the Get-SOPHOSToken Function to get the API Key
     Get-SOPHOSToken
@@ -230,8 +236,8 @@ do
 	$computername = Read-Host -Prompt 'Enter the Full or Partial Computer Name your looking for'
     Get-SOPHOSPartnerEndpointsAllTenants -hostname $computername
     } '3' {
-	 if ((Test-Path c:\SophosCentral\sophos_partner_secureaccess.json) -eq $true){
-        Remove-item c:\SophosCentral\sophos_partner_secureaccess.json
+	 if ((Test-Path $env:userprofile\sophos_partner_secureaccess.json) -eq $true){
+        Remove-item $env:userprofile\sophos_partner_secureaccess.json
 		Write-host ""
 		Write-host "***Sophos Central Token Deleted***" -foregroundcolor Green
 		Write-host ""
