@@ -90,7 +90,7 @@ function Set-SOPHOSCredentials{
 	Write-host ""
     Write-host "***********************"
     Write-host ""
-    Write-host "Crendentials stored securely" -ForegroundColor Green
+    Write-host "Credentials stored securely" -ForegroundColor Green
     Write-host ""
     Write-host "***********************"
     pause
