@@ -87,7 +87,13 @@ function Set-SOPHOSCredentials{
 
     # Out to JSON Config File
     ConvertTo-Json $ClientID, $ClientSecret | Out-File $env:userprofile\sophos_partner_secureaccess.json -Force
-
+	Write-host ""
+    Write-host "***********************"
+    Write-host ""
+    Write-host "Crendentials stored securely" -ForegroundColor Green
+    Write-host ""
+    Write-host "***********************"
+    pause
     # Run the Get-SOPHOSToken Function to get the API Key
     Get-SOPHOSToken
 
@@ -241,6 +247,11 @@ do
 		Write-host ""
 		Write-host "***Sophos Central Token Deleted***" -foregroundcolor Green
 		Write-host ""
+        }
+		Else {
+        Write-host ""
+        Write-host "***Sophos Central Token Not Found***" -foregroundcolor Red
+        Write-host ""
         }
 	}
     }
