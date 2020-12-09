@@ -248,11 +248,6 @@ do
 		Write-host "***Sophos Central Token Deleted***" -foregroundcolor Green
 		Write-host ""
         }
-		Else {
-        Write-host ""
-        Write-host "***Sophos Central Token Not Found***" -foregroundcolor Red
-        Write-host ""
-        }
 	}
     }
     pause
