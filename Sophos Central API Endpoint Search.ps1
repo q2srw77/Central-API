@@ -200,14 +200,7 @@ function Get-SOPHOSPartnerEndpointsAllTenants{
 			#Write-host "0xBennyV was here 2020"
             #break
         }
-        Else {
-            Write-host ""
-			Write-host "***********************"
-            Write-host "Tenant Name: $TenantName" -ForegroundColor Red
-            Write-host "Computer Not Found" -ForegroundColor Red
-            Write-host "***********************"
-            }
-            
+        
         
     }
 
@@ -247,6 +240,11 @@ do
 		Write-host ""
 		Write-host "***Sophos Central Token Deleted***" -foregroundcolor Green
 		Write-host ""
+        }
+		Else {
+        Write-host ""
+        Write-host "***Sophos Central Token Not Found***" -foregroundcolor Red
+        Write-host ""
         }
 	}
     }
