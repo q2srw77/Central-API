@@ -181,8 +181,12 @@ function Get-SOPHOSPartnerEndpointsAllTenants{
             # The break statement kills the loop.
             foreach ($hostname in $EndpointTenantSearch) {
             $computer = $hostname.hostname
+            $id = $hostname.id
             $tamperprotection = $hostname.tamperProtectionEnabled
             $person = $hostname.associatedPerson | Select-Object -ExpandProperty viaLogin
+            $tpallinfo = (Invoke-RestMethod -Method Get -Uri $apiHost"/endpoint/v1/endpoints/"$id"/tamper-protection" -Headers $TentantAPIHeaders -ErrorAction SilentlyContinue -ErrorVariable Error )
+            $tppassword = $tpallinfo.password
+            $tpprevpass = $tpallinfo.previousPasswords
             Write-host ""
 			Write-host "***********************"
 			Write-host ""
@@ -194,20 +198,16 @@ function Get-SOPHOSPartnerEndpointsAllTenants{
 			Write-host ""
 			Write-host "Tamper Protection Enabled: $tamperprotection" -ForegroundColor Green
             Write-host ""
-            # Write-host "TenantID: $TenantID" -ForegroundColor Green
+            Write-host "Tamper Protection Password: $tppassword" -ForegroundColor Green
+            Write-host ""
+            Write-host "Tamper Protection Previous Passwords: $tpprevpass" -ForegroundColor Green
+            Write-host ""
             Write-host "***********************"
             }
 			#Write-host "0xBennyV was here 2020"
             #break
         }
-        Else {
-            Write-host ""
-			Write-host "***********************"
-            Write-host "Tenant Name: $TenantName" -ForegroundColor Red
-            Write-host "Computer Not Found" -ForegroundColor Red
-            Write-host "***********************"
-            }
-            
+        
         
     }
 
