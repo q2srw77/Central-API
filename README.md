@@ -16,10 +16,12 @@ The Endpoint Migration will move the Endpoint ID from the Current Tenant to the 
 
 Endpoint ID, Current Tenant ID, and Destination Tenant ID are all required before you start.
 
-Endpoint Search can get the Endpoint ID and Current Tenant ID. 
-Tenant Search can get the Destination ID.
+- Endpoint Search can get the Endpoint ID and Current Tenant ID. 
+- Tenant Search can get the Destination ID.
 
-**Migration Status can be used after to confirm the migration job completed successfully**
+# Migration Status
+
+Migration Status can be used after the migration job has been sent to confirm it completed successfully
   
 ```
 This script isn't supported by Sophos Support
