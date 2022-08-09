@@ -154,7 +154,7 @@ function Get-SOPHOSPartnerEndpointsAllTenants{
 
     
     foreach ($tenant in $global:PartnerTenants) {
-        Start-Sleep -Seconds 0
+        Start-Sleep -Seconds 5
         $apihost = $tenant.apiHost
         $tenantid = $tenant.id
         $tenantname = $tenant.name
