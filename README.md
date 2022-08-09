@@ -6,7 +6,7 @@ Then you can use the Endpoint Search, Tenant Search or Endpoint Migration
 
 **For Endpoint & Tenant Search** - You can enter the full or partial name. It will find all Endpoints/Tenants that match.
 
-*If Endpoint Search gets an error about too many requests, you will need to modify the Start-Sleep for the Function: Get-SOPHOSPartnerEndpointsAllTenants *  
+*If Endpoint Search gets an error about too many requests, you will need to modify the Start-Sleep for the Function: Get-SOPHOSPartnerEndpointsAllTenants*
 
 # Endpoint Migration
 
