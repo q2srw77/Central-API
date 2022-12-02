@@ -23,7 +23,16 @@ Endpoint ID, Current Tenant ID, and Destination Tenant ID are all required befor
 # Migration Status
 
 Migration Status can be used after the migration job has been sent to confirm it completed successfully. This only check the last migration jon that was run.
-  
+
+# Block SHA256 Hash on all Tenants
+
+This will go through all Sophos Central Tenants and add the SHA256 to the Blocked Items under Global Settings
+
+-Enter the SHA256 that you want to block
+-Enter the Comment for the Blocked Item.
+
+The Sleep Timer might need to be adjusted for larger tenant lists.
+
 ```
 This script isn't supported by Sophos Support
 ```
