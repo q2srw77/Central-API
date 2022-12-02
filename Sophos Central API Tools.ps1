@@ -433,7 +433,8 @@ function Get-SophosAddBlockedItem{
             $PartnerTenantURI = "https://api.central.sophos.com/partner/v1/tenants"
     		
         foreach ($id in $global:PartnerTenants) {
-            $tenant_id = $id.id
+            Start-Sleep -Seconds 1
+			$tenant_id = $id.id
 			$tenant_ApiHost = $id.apiHost
             
 			$block_URI = $tenant_ApiHost + "/endpoint/v1/settings/blocked-items"
