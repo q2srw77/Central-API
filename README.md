@@ -22,8 +22,7 @@ Endpoint ID, Current Tenant ID, and Destination Tenant ID are all required befor
 
 # Migration Status
 
-Migration Status can be used after the migration job has been sent to confirm it completed successfully
-(this will only check the last migration run)
+Migration Status can be used after the migration job has been sent to confirm it completed successfully. This only check the last migration jon that was run.
   
 ```
 This script isn't supported by Sophos Support
