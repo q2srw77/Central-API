@@ -419,6 +419,38 @@ function Get-MigrationStatus{
     
 }
 
+function Get-SophosAddBlockedItem{
+    # Before the function runs check the token expiry and regenerate if needed
+    Get-SOPHOSTokenExpiry
+	
+    # Get the latest list of partners with the ID, API Host and Name
+    Get-SOPHOSPartnerTenants
+
+    # Set TLS Version
+    [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
+
+    #Set Partner Tenant URI
+            $PartnerTenantURI = "https://api.central.sophos.com/partner/v1/tenants"
+    		
+        foreach ($id in $global:PartnerTenants) {
+            $tenant_id = $id.id
+			$tenant_ApiHost = $id.apiHost
+            
+			$block_URI = $tenant_ApiHost + "/endpoint/v1/settings/blocked-items"
+			
+			$BlockHeaders = @{
+                "Content-Type" = "application/json";
+                "Authorization" = "Bearer $Global:Token";
+                "X-Tenant-ID" = $tenant_id;
+                }
+			
+			$BlockData = "{`"type`": `"sha256`",`"properties`": {`"sha256`": `"$hashdata`"},`"comment`": `"$commentdata`"}"
+			
+			Invoke-RestMethod -Method Post -Uri $block_URI -Headers $BlockHeaders -Body $BlockData
+            }
+             
+        
+    }
 
 function Show-Menu {
     param (
@@ -432,7 +464,8 @@ function Show-Menu {
     Write-Host "3: Search Tenants"
     Write-Host "4: Migrate Endpoint"
     Write-Host "5: Migration Status"
-	Write-Host "6: Delete Token"
+	Write-Host "6: Block SHA256 on all Tenants"
+	Write-Host "7: Delete Token"
     Write-Host "Q: Press 'Q' to quit."
 }
 
@@ -472,7 +505,14 @@ do
 	Get-MigrationStatus
     }  
     
-    '6' {
+	'6' {
+    Write-host ""
+	$hashdata = Read-Host -Prompt 'Enter the SHA256 Hash ID'
+    $commentdata = Read-Host -Prompt 'Enter the Comment'
+    Get-SophosAddBlockedItem
+    }
+	
+    '7' {
 	 if ((Test-Path $env:userprofile\sophos_partner_secureaccess.json) -eq $true){
         Remove-item $env:userprofile\sophos_partner_secureaccess.json
 		Write-host ""
