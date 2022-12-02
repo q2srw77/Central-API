@@ -16,7 +16,7 @@ Endpoint ID, Current Tenant ID, and Destination Tenant ID are all required befor
 
 - Endpoint Search can get the Endpoint ID and Current Tenant ID. 
 - Tenant Search can get the Destination ID.
-
+- 
 - To move multiple Endpoints, add them all to the Endpoint ID Input seperated by a comma.
 - Example: EndpointID,EndpointID,EndpointID
 
