@@ -236,6 +236,7 @@ function Get-SOPHOSPartnerTenantSearch{
         foreach ($name in $TenantSearch) {
             $cname = $name.name
 			$id = $name.id
+			$global:TenantApiHost = $name.apiHost
             Write-host ""
 			Write-host "***********************"
 			Write-host ""
@@ -243,10 +244,37 @@ function Get-SOPHOSPartnerTenantSearch{
 			Write-host ""
             Write-host "Tenant ID: $id"  -ForegroundColor Green
             Write-host ""
-            Write-host "***********************"
+			Write-host "***********************"
             }
              
         
+    }
+# Still in the works. Get All Endpoints. Need to create a menu item.
+function Get-SOPHOSTenantEndpoints{
+    # Before the function runs check the token expiry and regenerate if needed
+    Get-SOPHOSTokenExpiry
+	
+    # Set TLS Version
+    [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
+
+    #Get Endpoint List
+    $EndpointList = "$global:TenantApiHost/endpoint/v1/endpoints"
+    
+	foreach ($hostname in $EndpointList) {
+            $device = $hostname.hostname
+			$deviceuser = $hostname.associatedPerson.name
+			$devicelastseen = lastSeenAt
+            Write-host ""
+			Write-host "***********************"
+			Write-host ""
+			Write-host "Device Name: $device"  -ForegroundColor Green
+			Write-host ""
+            Write-host "User: $deviceuser"  -ForegroundColor Green
+            Write-host ""
+			Write-host "Last Seen: $devicelastseen"  -ForegroundColor Green
+			Write-host ""
+			Write-host "***********************"
+            }
     }
 
 function Get-EndpointMigration{
@@ -306,21 +334,35 @@ function Get-EndpointMigration{
                 "Authorization" = "Bearer $Global:Token";
                 "X-Tenant-ID" = $fromtenant;
                 }
-            
-         #Migration Receive Data
-            $ReceiveData = "{`"fromTenant`" : `"$fromtenant`",`"endpoints`" : [`"$endpointid`"]}"
 
-         # Receive Job Results
+        # Convert EndpointIDs to an Array
+			$endpointarray = "$endpointid" -split ','
+
+			$stringBuilder = New-Object -TypeName "System.Text.StringBuilder"
+
+			[void]$stringBuilder.Append("")
+				foreach($endpoint in $endpointarray)
+					{
+						[void]$stringBuilder.Append("`"$endpoint`",")
+					}
+				$endpointoutput = $stringBuilder.ToString()
+
+				$endpointdata = $endpointoutput.Substring(0,$endpointoutput.Length-1)
+          
+        # Migration Receive Data
+            $ReceiveData = "{`"fromTenant`" : `"$fromtenant`",`"endpoints`" : [$endpointdata]}"
+
+        # Receive Job Results
 	        $ReceiveJob = (Invoke-RestMethod -Method Post -Uri $ReceiveURI -Headers $ReceiveHeaders -Body $ReceiveData)
 
-         #Migration Send URI
+        #Migration Send URI
             $SendURI = "$FromTenantHost/endpoint/v1/migrations/" + $ReceiveJob.id
 
-         #Migration Send Data
+        #Migration Send Data
             $SendToken = $ReceiveJob.token
             $SendData = "{`"token`" : `"$SendToken`",`"endpoints`" : [`"$endpointid`"]}"
     
-         #Send Job Results
+        #Send Job Results
             $SendJob = (Invoke-RestMethod -Method Put -Uri $SendURI -Headers $SendHeaders -Body $SendData)
 
         Write-host ""
