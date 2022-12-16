@@ -360,7 +360,7 @@ function Get-EndpointMigration{
 
         #Migration Send Data
             $SendToken = $ReceiveJob.token
-            $SendData = "{`"token`" : `"$SendToken`",`"endpoints`" : [`"$endpointid`"]}"
+            $SendData = "{`"token`" : `"$SendToken`",`"endpoints`" : [$endpointdata]}"
     
         #Send Job Results
             $SendJob = (Invoke-RestMethod -Method Put -Uri $SendURI -Headers $SendHeaders -Body $SendData)
