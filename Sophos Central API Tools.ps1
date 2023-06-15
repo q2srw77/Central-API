@@ -215,7 +215,9 @@ function Get-SOPHOSPartnerEndpointsAllTenants{
         
     }
 
-
+Write-Host ""
+Write-Host "Search Complete" -ForegroundColor Yellow
+Pause
 }
 
 function Get-SOPHOSPartnerTenantSearch{
@@ -244,37 +246,12 @@ function Get-SOPHOSPartnerTenantSearch{
 			Write-host ""
             Write-host "Tenant ID: $id"  -ForegroundColor Green
             Write-host ""
+            Write-host "API Host: $global:TenantApiHost" -ForegroundColor Green
 			Write-host "***********************"
             }
-             
-        
-    }
-# Still in the works. Get All Endpoints. Need to create a menu item.
-function Get-SOPHOSTenantEndpoints{
-    # Before the function runs check the token expiry and regenerate if needed
-    Get-SOPHOSTokenExpiry
-	
-    # Set TLS Version
-    [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
-
-    #Get Endpoint List
-    $EndpointList = "$global:TenantApiHost/endpoint/v1/endpoints"
-    
-	foreach ($hostname in $EndpointList) {
-            $device = $hostname.hostname
-			$deviceuser = $hostname.associatedPerson.name
-			$devicelastseen = lastSeenAt
-            Write-host ""
-			Write-host "***********************"
-			Write-host ""
-			Write-host "Device Name: $device"  -ForegroundColor Green
-			Write-host ""
-            Write-host "User: $deviceuser"  -ForegroundColor Green
-            Write-host ""
-			Write-host "Last Seen: $devicelastseen"  -ForegroundColor Green
-			Write-host ""
-			Write-host "***********************"
-            }
+  Write-Host ""
+  Write-Host "Search Complete" -ForegroundColor Yellow
+  Pause      
     }
 
 function Get-EndpointMigration{
@@ -379,7 +356,9 @@ function Get-EndpointMigration{
         Write-host "No or invalid selection made"
     }
 
-
+Write-Host ""
+Write-Host "Migration Job Submitted" -ForegroundColor Yellow
+Pause
 }
 
 function Get-MigrationStatus{
@@ -416,7 +395,8 @@ function Get-MigrationStatus{
     Write-host ""
     Write-host $MigrationStatus.items -ForegroundColor Green
     Write-host ""
-    
+  
+  Pause  
 }
 
 function Get-SophosAddBlockedItem{
@@ -449,9 +429,69 @@ function Get-SophosAddBlockedItem{
 			
 			Invoke-RestMethod -Method Post -Uri $block_URI -Headers $BlockHeaders -Body $BlockData
             }
-             
-        
+                
     }
+
+function Get-DownloadURLs{
+    # Before the function runs check the token expiry and regenerate if needed
+    Get-SOPHOSTokenExpiry
+	                 	
+    # Headers
+    
+    $PartnerTenantHeaders = @{
+        "Authorization" = "Bearer $global:Token";
+        "X-Partner-ID" = "$global:ApiPartnerId";
+        }
+    
+    $TenantHeaders = @{
+        "Authorization" = "Bearer $global:Token";
+        "X-Tenant-ID" = $customerid;
+        }
+
+    # Set TLS Version
+    [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
+
+    #Get Tenant Info
+    
+    $TenantData = (Invoke-RestMethod -Method Get -Uri "https://api.central.sophos.com/partner/v1/tenants/$customerid" -Headers $PartnerTenantHeaders -ErrorAction SilentlyContinue -ErrorVariable Error )
+    $TenantURL = $TenantData.apiHost
+    
+    #Get Download Data
+    $DownloadData = (Invoke-RestMethod -Method Get -Uri $TenantURL"/endpoint/v1/downloads?requestProducts=$ProductCode&platforms=$OS" -Headers $TenantHeaders -ErrorAction SilentlyContinue -ErrorVariable Error )
+
+    $Installers = $DownloadData.installers
+    
+	foreach ($productName in $Installers) {
+            $product = $productName.productName
+			$platform = $productName.platform
+			$type = $productName.type
+			$url = $productName.downloadUrl
+            Write-host ""
+			Write-host "***********************"
+			Write-host ""
+			Write-host "Product Name: $product"  -ForegroundColor Green
+			Write-host ""
+            Write-host "Platform: $platform"  -ForegroundColor Green
+            Write-host ""
+			Write-host "OS Type: $type"  -ForegroundColor Green
+			Write-host ""
+			Write-host "Download URL: $url" -ForegroundColor Green
+			Write-host "***********************"
+            }
+    pause
+    }
+
+function Product_Selection {
+    param (
+        [string]$Title = 'Installers'
+    )
+    Clear-Host
+    Write-Host "================ $Title ================"
+    Write-Host ""
+    Write-Host "1: Intercept X Essentials/Advanced"
+    Write-Host "2: Intercept X Adv with XDR"
+    Write-Host "3: Sophos MDR"
+}
 
 function Show-Menu {
     param (
@@ -466,7 +506,8 @@ function Show-Menu {
     Write-Host "4: Migrate Endpoint"
     Write-Host "5: Migration Status"
 	Write-Host "6: Block SHA256 on all Tenants"
-	Write-Host "7: Delete Token"
+	Write-Host "7: Get Download URLs"
+	Write-Host "8: Delete Token"
     Write-Host "Q: Press 'Q' to quit."
 }
 
@@ -513,7 +554,38 @@ do
     Get-SophosAddBlockedItem
     }
 	
-    '7' {
+	'7' {
+    Write-host ""
+	$customerid = Read-Host -Prompt 'Tenant ID'
+    $OS = "Windows"
+    Product_Selection
+    do
+ {
+    Product_Selection
+    Write-Host ""
+    $selection = Read-Host "Please make a selection"
+    switch ($selection)
+    {
+    '1' {
+    $ProductCode = "endpointProtection,interceptX"
+    Get-DownloadURLs
+    } 
+    
+    '2' {
+    $ProductCode = "endpointProtection,interceptX"
+    Get-DownloadURLs
+    } 
+    
+    '3' {
+    $ProductCode = "endpointProtection,interceptX"
+    Get-DownloadURLs
+    } 
+	}
+    }
+    until ($selection)
+    }
+	
+    '8' {
 	 if ((Test-Path $env:userprofile\sophos_partner_secureaccess.json) -eq $true){
         Remove-item $env:userprofile\sophos_partner_secureaccess.json
 		Write-host ""
@@ -527,6 +599,5 @@ do
         }
 	}
     }
-    pause
  }
  until ($selection -eq 'q')
