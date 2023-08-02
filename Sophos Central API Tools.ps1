@@ -562,6 +562,18 @@ function Product_Selection {
     Write-Host "3: Sophos MDR"
 }
 
+function Search_Menu {
+    param (
+        [string]$Title = 'Search'
+    )
+    Clear-Host
+    Write-Host "================ $Title ================"
+    Write-Host ""
+    Write-Host "1: Set the Tenant ID"
+    Write-Host "2: Search the Tenant for a Computer"
+    Write-Host "b: Back to Main Menu"
+}
+
 function Show-Menu {
     param (
         [string]$Title = 'Sophos Central API Access'
@@ -605,11 +617,27 @@ do
     } 
     
 	'4' {
+       do
+	{
+    Search_Menu
+    Write-Host ""
+    $search_selection = Read-Host "Please make a selection"
+    switch ($search_selection)
+    {
+    '1' {
     Write-host ""
 	$customerid = Read-Host -Prompt 'Enter Tenant ID to search'
-	Write-Host ""
+    } 
+    
+    '2' {
+    Write-Host ""
 	$computername = Read-Host -Prompt 'Enter the Full or Partial Computer Name your looking for'
-    Get-EndpointInTenant
+	Get-EndpointInTenant
+    } 
+   
+	}
+    }
+    until ($search_selection -eq 'b')
 	}
 	
     '5' {
