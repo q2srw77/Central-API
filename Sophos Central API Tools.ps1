@@ -167,19 +167,11 @@ function Get-SOPHOSPartnerEndpointsAllTenants{
         }
         if ($apihost -ne $null){
 	        # Post Request to SOPHOS for Endpoint API:
-	        $AllTenantEndpointResult = (Invoke-RestMethod -Method Get -Uri $apiHost"/endpoint/v1/endpoints?pageSize=500&type=computer&lastSeenBefore=P1D" -Headers $TentantAPIHeaders -ErrorAction SilentlyContinue -ErrorVariable Error )
+	        $AllTenantEndpointResult = (Invoke-RestMethod -Method Get -Uri $apiHost"/endpoint/v1/endpoints?pageSize=500&search="$computername"&searchField=hostname" -Headers $TentantAPIHeaders -ErrorAction SilentlyContinue -ErrorVariable Error )
         }
 
-        # Build the query
-        $EndpointTenantSearch = $AllTenantEndpointResult.items | ? {($_.hostname -like "*$computername*")}
-        
-        if ($EndpointTenantSearch.hostname -like "*$computername*") {
-            # This should speed up the script and fix the problem.
-            # This removes the need for the next conditional statement.
-            # If the computer is found, it uses the $tenantname and $tenantid variable within the existing loop
-            # If more tenant information is needed add the additional items on line 126 from the intial partner list
-            # The break statement kills the loop.
-            foreach ($hostname in $EndpointTenantSearch) {
+        # Display the Search Results
+            foreach ($hostname in $AllTenantEndpointResult.items) {
             $computer = $hostname.hostname
             $id = $hostname.id
             $tamperprotection = $hostname.tamperProtectionEnabled
@@ -208,12 +200,77 @@ function Get-SOPHOSPartnerEndpointsAllTenants{
             Write-host ""
             Write-host "***********************"
             }
-			#Write-host "0xBennyV was here 2020"
             #break
         }
-        
-        
+
+Write-Host ""
+Write-Host "Search Complete" -ForegroundColor Yellow
+Pause
+}
+
+function Get-EndpointInTenant{
+    # Before the function runs check the token expiry and regenerate if needed
+    Get-SOPHOSTokenExpiry
+	
+    # Set TLS Version
+    [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
+
+    #Set Partner Tenant URI
+        $PartnerTenantURI = "https://api.central.sophos.com/partner/v1/tenants"
+			
+    # SOPHOS Whoami Headers
+		$PartnerTenantHeaders = @{
+			"Authorization" = "Bearer $global:Token";
+			"X-Partner-ID" = "$global:ApiPartnerId";
     }
+
+    #Set Tenant Info
+		$tenant = (Invoke-RestMethod -Method Get -URI "https://api.central.sophos.com/partner/v1/tenants/$customerid" -Headers $PartnerTenantHeaders -ErrorAction SilentlyContinue -ErrorVariable Error)
+        $apihost = $tenant.apiHost
+        $tenantid = $tenant.id
+        $tenantname = $tenant.name
+
+    # SOPHOS Customer Tenant API Headers:
+        $TentantAPIHeaders = @{
+            "Authorization" = "Bearer $global:Token";
+            "X-Tenant-ID" = "$tenantid";
+        }
+		
+	# Post Request to SOPHOS for Endpoint API:
+	    $AllTenantEndpointResult = (Invoke-RestMethod -Method Get -Uri $apiHost"/endpoint/v1/endpoints?pageSize=500&search="$computername"&searchField=hostname" -Headers $TentantAPIHeaders -ErrorAction SilentlyContinue -ErrorVariable Error )
+	
+    # Display the Results
+        
+            foreach ($hostname in $AllTenantEndpointResult.items) {
+            $computer = $hostname.hostname
+            $id = $hostname.id
+            $tamperprotection = $hostname.tamperProtectionEnabled
+            $person = $hostname.associatedPerson | Select-Object -ExpandProperty viaLogin
+            $tpallinfo = (Invoke-RestMethod -Method Get -Uri $apiHost"/endpoint/v1/endpoints/"$id"/tamper-protection" -Headers $TentantAPIHeaders -ErrorAction SilentlyContinue -ErrorVariable Error )
+            $tppassword = $tpallinfo.password
+            $tpprevpass = $tpallinfo.previousPasswords
+            Write-host ""
+			Write-host "***********************"
+			Write-host ""
+			Write-host "Computer Name: $computer"  -ForegroundColor Green
+			Write-host ""
+            Write-host "Computer ID: $id"  -ForegroundColor Green
+            Write-host ""
+            Write-host "User: $person"  -ForegroundColor Green
+            Write-host ""
+			Write-host "TenantName: $TenantName"  -ForegroundColor Green
+			Write-host ""
+            Write-host "TenantID: $Tenantid"  -ForegroundColor Green
+			Write-host ""
+			Write-host "Tamper Protection Enabled: $tamperprotection" -ForegroundColor Green
+            Write-host ""
+            Write-host "Tamper Protection Password: $tppassword" -ForegroundColor Green
+            Write-host ""
+            Write-host "Tamper Protection Previous Passwords: $tpprevpass" -ForegroundColor Green
+            Write-host ""
+            Write-host "***********************"
+            }
+            #break
 
 Write-Host ""
 Write-Host "Search Complete" -ForegroundColor Yellow
@@ -481,6 +538,18 @@ function Get-DownloadURLs{
     pause
     }
 
+function OS_Selection {
+    param (
+        [string]$Title = 'OS'
+    )
+    Clear-Host
+    Write-Host "================ $Title ================"
+    Write-Host ""
+    Write-Host "1: Windows"
+    Write-Host "2: macOS"
+    Write-Host "3: Linux"
+}
+
 function Product_Selection {
     param (
         [string]$Title = 'Installers'
@@ -501,13 +570,14 @@ function Show-Menu {
     Write-Host "================ $Title ================"
     Write-Host ""
     Write-Host "1: Get Sophos Central API Token"
-    Write-Host "2: Search for Endpoint"
-    Write-Host "3: Search Tenants"
-    Write-Host "4: Migrate Endpoint"
-    Write-Host "5: Migration Status"
-	Write-Host "6: Block SHA256 on all Tenants"
-	Write-Host "7: Get Download URLs"
-	Write-Host "8: Delete Token"
+    Write-Host "2: Global Search for an Endpoint"
+    Write-Host "3: Search for a Tenant"
+	Write-Host "4: Search Tenant for an Endpoint"
+    Write-Host "5: Migrate Endpoint"
+    Write-Host "6: Migration Status"
+	Write-Host "7: Block SHA256 on all Tenants"
+	Write-Host "8: Get Download URLs"
+	Write-Host "9: Delete Token"
     Write-Host "Q: Press 'Q' to quit."
 }
 
@@ -525,7 +595,7 @@ do
     '2' {
     Write-host ""
 	$computername = Read-Host -Prompt 'Enter the Full or Partial Computer Name your looking for'
-    Get-SOPHOSPartnerEndpointsAllTenants -hostname $computername
+    Get-SOPHOSPartnerEndpointsAllTenants
     } 
     
     '3' {
@@ -534,7 +604,15 @@ do
     Get-SOPHOSPartnerTenantSearch
     } 
     
-    '4' {
+	'4' {
+    Write-host ""
+	$customerid = Read-Host -Prompt 'Enter Tenant ID to search'
+	Write-Host ""
+	$computername = Read-Host -Prompt 'Enter the Full or Partial Computer Name your looking for'
+    Get-EndpointInTenant
+	}
+	
+    '5' {
     Write-host ""
 	$global:desttenant = Read-Host -Prompt 'Enter the Destination Tenant ID'
     $global:fromtenant = Read-Host -Prompt 'Enter the Current Tenant ID'
@@ -542,23 +620,44 @@ do
     Get-EndpointMigration
     }
     
-    '5' {
+    '6' {
     Write-host ""
 	Get-MigrationStatus
     }  
     
-	'6' {
+	'7' {
     Write-host ""
 	$hashdata = Read-Host -Prompt 'Enter the SHA256 Hash ID'
     $commentdata = Read-Host -Prompt 'Enter the Comment'
     Get-SophosAddBlockedItem
     }
 	
-	'7' {
+	'8' {
     Write-host ""
 	$customerid = Read-Host -Prompt 'Tenant ID'
-    $OS = "Windows"
-    Product_Selection
+
+    do
+ {
+    OS_Selection
+    Write-Host ""
+    $os_selection = Read-Host "Please make a selection"
+    switch ($os_selection)
+    {
+    '1' {
+    $OS = "windows"
+    } 
+    
+    '2' {
+    $OS = "macOS"
+    } 
+    
+    '3' {
+    $OS = "linux"
+    } 
+	}
+    }
+    until ($os_selection)
+	
     do
  {
     Product_Selection
@@ -568,24 +667,22 @@ do
     {
     '1' {
     $ProductCode = "endpointProtection,interceptX"
-    Get-DownloadURLs
     } 
     
     '2' {
-    $ProductCode = "endpointProtection,interceptX"
-    Get-DownloadURLs
+    $ProductCode = "endpointProtection,interceptX,xdr"
     } 
     
     '3' {
-    $ProductCode = "endpointProtection,interceptX"
-    Get-DownloadURLs
+    $ProductCode = "endpointProtection,interceptX,xdr,mtr"
     } 
 	}
     }
     until ($selection)
+	Get-DownloadURLs
     }
 	
-    '8' {
+    '9' {
 	 if ((Test-Path $env:userprofile\sophos_partner_secureaccess.json) -eq $true){
         Remove-item $env:userprofile\sophos_partner_secureaccess.json
 		Write-host ""
