@@ -538,6 +538,62 @@ function Get-DownloadURLs{
     pause
     }
 
+function Get-FirewallsAllTenants{
+    # Before the function runs check the token expiry and regenerate if needed
+    Get-SOPHOSTokenExpiry
+        
+    # Get the latest list of partners with the ID, API Host and Name
+    Get-SOPHOSPartnerTenants
+    
+    # Set TLS Version
+    [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
+    
+    #Set Partner Tenant URI
+            $PartnerTenantURI = "https://api.central.sophos.com/partner/v1/tenants"
+    
+        
+    foreach ($tenant in $global:PartnerTenants) {
+        Start-Sleep -Seconds 5
+        $apihost = $tenant.apiHost
+        $tenantid = $tenant.id
+        $tenantname = $tenant.name
+    
+            # SOPHOS Customer Tenant API Headers:
+             
+        $TentantAPIHeaders = @{
+            "Authorization" = "Bearer $global:Token";
+            "X-Tenant-ID" = "$tenantid";
+        }
+        if ($apihost -ne $null){
+            # Post Request to SOPHOS for Endpoint API:
+             $AllTenantFirewallResult = (Invoke-RestMethod -Method Get -Uri $apiHost"/firewall/v1/firewalls" -Headers $TentantAPIHeaders -ErrorAction SilentlyContinue -ErrorVariable Error )
+        }
+    
+        # Display the Search Results
+            foreach ($hostname in $AllTenantFirewallResult.items) {
+            $firewallname = $hostname.hostname
+            $model = $hostname.model
+            $firmware = $hostname.firmwareVersion
+            Write-Host "**************"
+            Write-Host "$firewallname"
+            Write-Host "$model"
+            Write-host "$firmware"
+            Write-Host "$tenantname"
+            Write-Host "**************"
+            Write-Host "**Searching***"
+            Write-Host "**************"
+
+            [pscustomobject]@{FirewallName = $firewallname; Model = $model; Firmware = $firmware; CustomerName = $tenantname } | Export-Csv -Append -Path ".\FirewallList.csv" -NoTypeInformation
+
+            }
+            #break
+        }
+    
+Write-Host ""
+Write-Host "Export Complete" -ForegroundColor Yellow
+Pause
+}
+
 function OS_Selection {
     param (
         [string]$Title = 'OS'
@@ -587,9 +643,10 @@ function Show-Menu {
 	Write-Host "4: Search Tenant for an Endpoint"
     Write-Host "5: Migrate Endpoint"
     Write-Host "6: Migration Status"
-	Write-Host "7: Block SHA256 on all Tenants"
-	Write-Host "8: Get Download URLs"
-	Write-Host "9: Delete Token"
+    Write-Host "7: Export Firewall List"
+	Write-Host "8: Block SHA256 on all Tenants"
+	Write-Host "9: Get Download URLs"
+	Write-Host "D: Delete Token"
     Write-Host "Q: Press 'Q' to quit."
 }
 
@@ -653,14 +710,19 @@ do
 	Get-MigrationStatus
     }  
     
-	'7' {
+    '7' {
+    Write-host ""
+    Get-FirewallsAllTenants
+    }
+	
+    '8' {
     Write-host ""
 	$hashdata = Read-Host -Prompt 'Enter the SHA256 Hash ID'
     $commentdata = Read-Host -Prompt 'Enter the Comment'
     Get-SophosAddBlockedItem
     }
 	
-	'8' {
+	'9' {
     Write-host ""
 	$customerid = Read-Host -Prompt 'Tenant ID'
 
@@ -710,7 +772,7 @@ do
 	Get-DownloadURLs
     }
 	
-    '9' {
+    'd' {
 	 if ((Test-Path $env:userprofile\sophos_partner_secureaccess.json) -eq $true){
         Remove-item $env:userprofile\sophos_partner_secureaccess.json
 		Write-host ""
