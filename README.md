@@ -33,6 +33,14 @@ This will go through all Sophos Central Tenants and add the SHA256 to the Blocke
 
 The Sleep Timer might need to be adjusted for larger tenant lists.
 
+# Firewall List Export to CSV
+
+This will go through all Sophos Central Tenants to collect the Firewall data and export it to a CSV file.
+
+-Firewall Name, Model, Firmware Version and Customer Name are exported
+-The FirewallList.csv will be created in the directory that the PowerShell was executed from.
+
+
 ```
 This script isn't supported by Sophos Support
 ```
