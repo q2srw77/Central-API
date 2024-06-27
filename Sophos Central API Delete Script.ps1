@@ -107,7 +107,7 @@ function deleteEndpoints{
 # Post Request to SOPHOS for Endpoint API:
     $GroupEndpointResult = (Invoke-RestMethod -Method Get -Uri $apiHost"/endpoint/v1/endpoints?pageSize=500&search="$groupName"&searchFields=groupName" -Headers $TentantAPIHeaders -ErrorAction SilentlyContinue -ErrorVariable Error)
 	
-# Display the Results
+# Execute the Deletion of all Endpoints in the Search Group
         
     foreach ($id in $GroupEndpointResult.items) {
         $endpointID = $id.id
