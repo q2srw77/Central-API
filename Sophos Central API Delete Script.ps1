@@ -1,5 +1,7 @@
 ﻿#Sophos Central API Delete Endpoints in a Group
 
+#***Can be used as a nightly script to clear Pooled VDI Desktops from Sophos Central to avoid duplicates***
+
 
 #Enter the Central Partner API Credentials
 
