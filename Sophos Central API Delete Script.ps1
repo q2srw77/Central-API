@@ -110,9 +110,6 @@ function deleteEndpoints{
 # Display the Results
         
     foreach ($id in $GroupEndpointResult.items) {
-        Write-Host $id.id
-        Write-Host $id.hostname
-        Write-Host $apihost
         $endpointID = $id.id
         Invoke-RestMethod -Method Delete -Uri $apiHost"/endpoint/v1/endpoints/$endpointID" -Headers $TentantAPIHeaders -ErrorAction SilentlyContinue -ErrorVariable Error  
         }
