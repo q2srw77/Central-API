@@ -594,6 +594,60 @@ Write-Host "Export Complete" -ForegroundColor Yellow
 Pause
 }
 
+function Get-ExtendedSupportAllTenants{
+    # Before the function runs check the token expiry and regenerate if needed
+    Get-SOPHOSTokenExpiry
+        
+    # Get the latest list of partners with the ID, API Host and Name
+    Get-SOPHOSPartnerTenants
+    
+    # Set TLS Version
+    [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
+    
+    #Set Partner Tenant URI
+            $PartnerTenantURI = "https://api.central.sophos.com/partner/v1/tenants"
+    
+        
+    foreach ($tenant in $global:PartnerTenants) {
+        Start-Sleep -Seconds 5
+        $apihost = $tenant.apiHost
+        $tenantid = $tenant.id
+        $tenantname = $tenant.name
+    
+            # SOPHOS Customer Tenant API Headers:
+             
+        $TentantAPIHeaders = @{
+            "Authorization" = "Bearer $global:Token";
+            "X-Tenant-ID" = "$tenantid";
+        }
+        if ($apihost -ne $null){
+            # Post Request to SOPHOS for Endpoint API:
+             $ExtendedSupportOSResult = (Invoke-RestMethod -Method Get -Uri $apiHost"/endpoint/v1/endpoints?search=$osVersion&searchFields=osName" -Headers $TentantAPIHeaders -ErrorAction SilentlyContinue -ErrorVariable Error )
+        }
+    
+        # Display the Search Results
+            foreach ($hostname in $ExtendedSupportOSResult.items) {
+            $computername = $hostname.hostname
+            $os = $hostname.os.name
+            Write-Host "**************"
+            Write-Host "$computername"
+            Write-Host "$os"
+            Write-Host "$tenantname"
+            Write-Host "**************"
+            Write-Host "**Searching***"
+            Write-Host "**************"
+
+            [pscustomobject]@{ComputerName = $computername; OS = $os; CustomerName = $tenantname } | Export-Csv -Append -Path ".\ExtendedSupportList.csv" -NoTypeInformation
+
+            }
+            #break
+        }
+    
+Write-Host ""
+Write-Host "Export Complete" -ForegroundColor Yellow
+Pause
+}
+
 function OS_Selection {
     param (
         [string]$Title = 'OS'
@@ -630,6 +684,21 @@ function Search_Menu {
     Write-Host "b: Back to Main Menu"
 }
 
+function OSVersion_Menu {
+    param (
+        [string]$Title = 'Extended Support'
+    )
+    Clear-Host
+    Write-Host "================ $Title ================"
+    Write-Host ""
+    Write-Host "1: Search for Windows 7"
+    Write-Host "2: Search for Windows 8"
+    Write-Host "3: Search for Windows 2003"
+    Write-Host "4: Search for Windows 2008"
+    Write-Host "5: Search for Windows 2012"
+    Write-Host "B: Back to Main Menu"
+}
+
 function Show-Menu {
     param (
         [string]$Title = 'Sophos Central API Access'
@@ -646,6 +715,7 @@ function Show-Menu {
     Write-Host "7: Export Firewall List"
 	Write-Host "8: Block SHA256 on all Tenants"
 	Write-Host "9: Get Download URLs"
+    Write-Host "E: Export Extended Support OS List"
 	Write-Host "D: Delete Token"
     Write-Host "Q: Press 'Q' to quit."
 }
@@ -771,8 +841,52 @@ do
     until ($selection)
 	Get-DownloadURLs
     }
-	
-    'd' {
+	    
+	'e' {
+        do
+     {
+     OSVersion_Menu
+     Write-Host ""
+     $versionSelection = Read-Host "Please make a selection"
+     switch ($versionSelection)
+     {
+     '1' {
+     Write-host "Windows 7 Selected"
+     $Global:osVersion = "7"
+     Get-ExtendedSupportAllTenants
+     } 
+     
+     '2' {
+     Write-host "Windows 8 Selected"
+     $Global:osVersion = "8"
+     Get-ExtendedSupportAllTenants
+     } 
+
+     '3' {
+     Write-host "Windows 2003 Server Selected"
+     $Global:osVersion = "2003"
+     Get-ExtendedSupportAllTenants
+     } 
+
+     '4' {
+     Write-host "Windows 2008 Server Selected"
+     $Global:osVersion = "2008"
+     Get-ExtendedSupportAllTenants
+     } 
+
+     '5' {
+     Write-host "Windows 2012 Server Selected"
+     $Global:osVersion = "2012"
+     Get-ExtendedSupportAllTenants
+     }
+     
+     }
+     }
+     until ($search_selection -eq 'b')
+     Show_Menu 
+     }
+     
+   'd' {
 	 if ((Test-Path $env:userprofile\sophos_partner_secureaccess.json) -eq $true){
         Remove-item $env:userprofile\sophos_partner_secureaccess.json
 		Write-host ""

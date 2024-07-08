@@ -40,6 +40,13 @@ This will go through all Sophos Central Tenants to collect the Firewall data and
 -Firewall Name, Model, Firmware Version and Customer Name are exported
 -The FirewallList.csv will be created in the directory that the PowerShell was executed from.
 
+# Extended Support OS Export to CSV
+
+This will go through all Sophos Central Tenants to collect the Extended Support OS Computers and export it to a CSV file.
+
+-Computer Name, OS, and Customer Name are exported
+-The ExtendedSupportList.csv will be created in the directory that the PowerShell was executed from.
+
 
 ```
 This script isn't supported by Sophos Support
