@@ -413,7 +413,9 @@ function Get-EndpointMigration{
     }
     else
     {
+        Write-host ""
         Write-host "No or invalid selection made"
+        Write-host ""
     }
 
 Pause
