@@ -406,6 +406,9 @@ function Get-EndpointMigration{
         Write-host ""
         
         $global:MigrationID = $SendJob.id
+
+        Write-Host ""
+        Write-Host "Migration Job Submitted" -ForegroundColor Yellow
     
     }
     else
@@ -413,8 +416,6 @@ function Get-EndpointMigration{
         Write-host "No or invalid selection made"
     }
 
-Write-Host ""
-Write-Host "Migration Job Submitted" -ForegroundColor Yellow
 Pause
 }
 
