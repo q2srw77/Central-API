@@ -18,9 +18,9 @@ Run PowerShell as an Admin
 
 Execute the following command to allow the unsigned script for this process
 
-Set-ExecutionPolicy -Scope Process
+**Set-ExecutionPolicy -Scope Process**
 
-Then execute the ./Sophos Central API Tool.ps1
+Then execute the **./Sophos Central API Tool.ps1**
 
 # Endpoint Migration
 
