@@ -4,6 +4,20 @@ This menu driven Central API Powershell Script is designed to get your Token and
 
 Then you can use the Endpoint Search, Tenant Search or Endpoint Migration
 
+## Download
+Click on the Green <>Code button and click on Download Zip
+
+## Execution
+Requires PowerShell 5.1 or higher.
+
+Run PowerShell as an Admin
+
+Execute the following command to allow the unsigned script for this process
+
+Set-ExecutionPolicy -Scope Process
+
+Then execute the ./Sophos Central API Tool.ps1
+
 **For Endpoint & Tenant Search** - You can enter the full or partial name. It will find all Endpoints/Tenants that match.
 
 *If Endpoint Search gets an error about too many requests, you will need to modify the Start-Sleep for the Function: Get-SOPHOSPartnerEndpointsAllTenants*
