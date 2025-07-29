@@ -14,11 +14,11 @@ Click on the Green <>Code button and click on Download Zip
 ## Execution
 Requires PowerShell 5.1 or higher.
 
-Run PowerShell as an Admin
+Run PowerShell (Do Not Run as an Admin)
 
 Execute the following command to allow the unsigned script for this process
 
-**Set-ExecutionPolicy -Scope Process**
+**Set-ExecutionPolicy unrestricted -Scope Process**
 
 Then execute the **./Sophos Central API Tool.ps1**
 

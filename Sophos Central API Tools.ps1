@@ -125,17 +125,22 @@ function Get-SOPHOSPartnerTenants{
     [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
 
 	# Post Request to SOPHOS Endpoint Gateway, This request is just used to get the pages (waste of a request I know)
-	$PartnerTenantResult = (Invoke-RestMethod -Method Get -Uri $PartnerTenantURI -Headers $PartnerTenantHeaders -ErrorAction SilentlyContinue -ErrorVariable Error)
+	$InitialResult = (Invoke-RestMethod -Method Get -Uri $PartnerTenantURI -Headers $PartnerTenantHeaders -ErrorAction SilentlyContinue -ErrorVariable Error)
     
     # Check them all into this collection
     $AllPartnerTenantResults = @()
     
-    For ($i=1; $i -le $PartnerTenantResult.pages.total; $i++) {
-        $PartnerTenantURI = "https://api.central.sophos.com/partner/v1/tenants?pageTotal=True&page=$i"
-        $AllPartnerTenantResults += (Invoke-RestMethod -Method Get -Uri $PartnerTenantURI -Headers $PartnerTenantHeaders -ErrorAction SilentlyContinue -ErrorVariable Error)
+    for ($i = 1; $i -le $InitialResult.pages.total; $i++) {
+        $PagedURI = "https://api.central.sophos.com/partner/v1/tenants?pageTotal=True&page=$i"
+        $PagedResult = Invoke-RestMethod -Method Get -Uri $PagedURI -Headers $PartnerTenantHeaders -ErrorAction SilentlyContinue -ErrorVariable Error
+        
+        if ($PagedResult.items) {
+            $AllPartnerTenantResults += $PagedResult.items
+        }
     }
 
-    $global:PartnerTenants = $AllPartnerTenantResults.items | Select -Property id, name, apiHost
+    # Store the result globally
+    $global:PartnerTenants = $AllPartnerTenantResults | Select-Object -Property id, name, apiHost
 
 }
 
@@ -175,7 +180,7 @@ function Get-SOPHOSPartnerEndpointsAllTenants{
             $computer = $hostname.hostname
             $id = $hostname.id
             $tamperprotection = $hostname.tamperProtectionEnabled
-            $person = $hostname.associatedPerson | Select-Object -ExpandProperty viaLogin
+            $person = $hostname.associatedPerson.name
             $tpallinfo = (Invoke-RestMethod -Method Get -Uri $apiHost"/endpoint/v1/endpoints/"$id"/tamper-protection" -Headers $TentantAPIHeaders -ErrorAction SilentlyContinue -ErrorVariable Error )
             $tppassword = $tpallinfo.password
             $tpprevpass = $tpallinfo.previousPasswords
@@ -245,7 +250,7 @@ function Get-EndpointInTenant{
             $computer = $hostname.hostname
             $id = $hostname.id
             $tamperprotection = $hostname.tamperProtectionEnabled
-            $person = $hostname.associatedPerson | Select-Object -ExpandProperty viaLogin
+            $person = $hostname.associatedPerson.name
             $tpallinfo = (Invoke-RestMethod -Method Get -Uri $apiHost"/endpoint/v1/endpoints/"$id"/tamper-protection" -Headers $TentantAPIHeaders -ErrorAction SilentlyContinue -ErrorVariable Error )
             $tppassword = $tpallinfo.password
             $tpprevpass = $tpallinfo.previousPasswords
@@ -321,15 +326,20 @@ function Get-EndpointMigration{
     # Set TLS Version
     [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
 
-    #Set Partner Tenant URI
-            $PartnerTenantURI = "https://api.central.sophos.com/partner/v1/tenants"
+    # Set Partner Tenant URI
+        $PartnerTenantURI = "https://api.central.sophos.com/partner/v1/tenants"
 
-    #Set Tenant Names
+    # Variable Input
+    $global:DestTenant = Read-Host -Prompt 'Enter the Destination Tenant ID'
+    $FromTenant = Read-Host -Prompt 'Enter the Current Tenant ID'
+    $EndpointId = Read-Host -Prompt 'Enter the Endpoint ID(s) (comma-separated for multiple)'
+    
+    # Set Tenant Names
 
-        $DestTenantSearch = $global:PartnerTenants | ? {($_.id -like "*$desttenant*")}
-        $FromTenantSearch = $global:PartnerTenants | ? {($_.id -like "*$fromtenant*")}
+        $DestTenantSearch = $PartnerTenants | Where-Object { $_.id -like "$DestTenant" }   
+        $FromTenantSearch = $PartnerTenants | Where-Object { $_.id -like "$FromTenant" }
 
-        $DestAPIHost = $DestTenantSearch.apiHost
+        $global:DestAPIHost = $DestTenantSearch.apiHost
         $FromTenantHost = $FromTenantSearch.apiHost
         
     Write-host ""
@@ -337,9 +347,11 @@ function Get-EndpointMigration{
     Write-host ""
     Write-host "Moving the Endpoint ID: $endpointid" -ForegroundColor Green
     Write-host ""
-    Write-host "From Tenant: " $FromTenantSearch.name "("$FromTenantSearch.id")" -ForegroundColor Green
+    Write-host "From Tenant: " $FromTenantSearch.name "("$FromTenant")" -ForegroundColor Green
+    Write-host "From Tenant API" $FromTenantHost -ForegroundColor Yellow
     Write-host ""
-    Write-host "To Tenant: " $DestTenantSearch.name "("$DestTenantSearch.id")" -ForegroundColor Green
+    Write-host "To Tenant: " $DestTenantSearch.name "("$DestTenant")" -ForegroundColor Green
+    Write-host "From Tenant API" $DestAPIHost -ForegroundColor Yellow
     Write-host ""
     Write-host ""
     Write-host "Please ensure that Endpoint Migration is enabled in Central Admin - Global Settings or"
@@ -350,7 +362,7 @@ function Get-EndpointMigration{
     
     $confirm = Read-Host -Prompt 'Is the above Info Correct and Endpoint Migrations Enabled? (Y/N)'
 
-    if ($confirm -eq "Y")
+    if ($confirm.ToUpper() -eq "Y")
     {
         # SOPHOS Endpoint Migration URI:
 	        $ReceiveURI = "$DestAPIHost/endpoint/v1/migrations"
@@ -406,15 +418,12 @@ function Get-EndpointMigration{
         Write-host ""
         
         $global:MigrationID = $SendJob.id
-
-        Write-Host ""
-        Write-Host "Migration Job Submitted" -ForegroundColor Yellow
     
     }
     else
     {
         Write-host ""
-        Write-host "No or invalid selection made"
+        Write-host "No or invalid selection made"  -ForegroundColor Yellow
         Write-host ""
     }
 
@@ -435,7 +444,7 @@ function Get-MigrationStatus{
             $StatusHeaders = @{
                 "Content-Type" = "application/json";
                 "Authorization" = "Bearer $Global:Token";
-                "X-Tenant-ID" = $desttenant;
+                "X-Tenant-ID" = $DestTenant;
                 }
 
     #Set Tenant Names
@@ -772,9 +781,6 @@ do
 	
     '5' {
     Write-host ""
-	$global:desttenant = Read-Host -Prompt 'Enter the Destination Tenant ID'
-    $global:fromtenant = Read-Host -Prompt 'Enter the Current Tenant ID'
-    $endpointid = Read-Host -Prompt 'Enter the Endpoint ID'
     Get-EndpointMigration
     }
     
