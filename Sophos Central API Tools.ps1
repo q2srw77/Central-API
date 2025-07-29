@@ -427,7 +427,7 @@ function Get-EndpointMigration{
         Write-host ""
         Write-host "Destination Tenant ID: " $DestTenant -ForegroundColor Green
         Write-host ""
-        Write-host "Please Migration ID and Destination Tenant ID as they will be required for the Migration Status" -ForegroundColor Green
+        Write-host "Copy the Migration ID and Destination Tenant ID as they will be required for the Migration Status" -ForegroundColor Green
         Write-host ""
     }
     else
