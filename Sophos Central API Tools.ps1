@@ -317,6 +317,11 @@ function Get-SOPHOSPartnerTenantSearch{
     }
 
 function Get-EndpointMigration{
+    #Script Notice
+        Write-host ""
+        Write-host "Running the Endpoint Migration Prerequites" -ForegroundColor Yellow
+        Write-host ""
+
     # Before the function runs check the token expiry and regenerate if needed
     Get-SOPHOSTokenExpiry
 	
@@ -330,28 +335,32 @@ function Get-EndpointMigration{
         $PartnerTenantURI = "https://api.central.sophos.com/partner/v1/tenants"
 
     # Variable Input
-    $global:DestTenant = Read-Host -Prompt 'Enter the Destination Tenant ID'
-    $FromTenant = Read-Host -Prompt 'Enter the Current Tenant ID'
-    $EndpointId = Read-Host -Prompt 'Enter the Endpoint ID(s) (comma-separated for multiple)'
+        Write-host ""
+        Write-host "***Endpoint Migration Tool***"
+        Write-host ""
+
+        $DestTenant = Read-Host -Prompt 'Enter the Destination Tenant ID'
+        $FromTenant = Read-Host -Prompt 'Enter the Current Tenant ID'
+        $EndpointId = Read-Host -Prompt 'Enter the Endpoint ID(s) (comma-separated for multiple)'
     
-    # Set Tenant Names
+    # Set Tenant Names and API Host
 
         $DestTenantSearch = $PartnerTenants | Where-Object { $_.id -like "$DestTenant" }   
         $FromTenantSearch = $PartnerTenants | Where-Object { $_.id -like "$FromTenant" }
 
-        $global:DestAPIHost = $DestTenantSearch.apiHost
+        $DestAPIHost = $DestTenantSearch.apiHost
         $FromTenantHost = $FromTenantSearch.apiHost
         
     Write-host ""
-    Write-host "Endpoint Migration Requested" -ForegroundColor Green
+    Write-host "***Endpoint Migration Requested***" -ForegroundColor Green
     Write-host ""
     Write-host "Moving the Endpoint ID: $endpointid" -ForegroundColor Green
     Write-host ""
     Write-host "From Tenant: " $FromTenantSearch.name "("$FromTenant")" -ForegroundColor Green
-    Write-host "From Tenant API" $FromTenantHost -ForegroundColor Yellow
+    Write-host "From Tenant API: " $FromTenantHost -ForegroundColor Yellow
     Write-host ""
     Write-host "To Tenant: " $DestTenantSearch.name "("$DestTenant")" -ForegroundColor Green
-    Write-host "From Tenant API" $DestAPIHost -ForegroundColor Yellow
+    Write-host "From Tenant API: " $DestAPIHost -ForegroundColor Yellow
     Write-host ""
     Write-host ""
     Write-host "Please ensure that Endpoint Migration is enabled in Central Admin - Global Settings or"
@@ -412,13 +421,14 @@ function Get-EndpointMigration{
             $SendJob = (Invoke-RestMethod -Method Put -Uri $SendURI -Headers $SendHeaders -Body $SendData)
 
         Write-host ""
+        Write-host "***Migration Job Details***"
         Write-host ""
         Write-host "Migration Job ID: " $SendJob.id -ForegroundColor Green
         Write-host ""
+        Write-host "Destination Tenant ID: " $DestTenant -ForegroundColor Green
         Write-host ""
-        
-        $global:MigrationID = $SendJob.id
-    
+        Write-host "Please Migration ID and Destination Tenant ID as they will be required for the Migration Status" -ForegroundColor Green
+        Write-host ""
     }
     else
     {
@@ -431,6 +441,11 @@ Pause
 }
 
 function Get-MigrationStatus{
+    #Script Notice
+        Write-host ""
+        Write-host "Running the Migration Status Prerequites" -ForegroundColor Yellow
+        Write-host ""
+
     # Before the function runs check the token expiry and regenerate if needed
     Get-SOPHOSTokenExpiry
 	
@@ -439,6 +454,19 @@ function Get-MigrationStatus{
 
     # Set TLS Version
     [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
+
+    # Variable Input
+        Write-host ""
+        Write-host "***Migration Status***"
+        Write-host ""
+
+        $DestTenant = Read-Host -Prompt 'Enter the Destination Tenant ID'
+        $MigrationID = Read-Host -Prompt 'Enter the Migration ID'
+        
+    # Set API Host
+
+        $DestTenantSearch = $PartnerTenants | Where-Object { $_.id -like "$DestTenant" }
+        $DestAPIHost = $DestTenantSearch.apiHost
 
     # Migration Status Headers:
             $StatusHeaders = @{
@@ -460,9 +488,11 @@ function Get-MigrationStatus{
     
     Write-host ""
     Write-host ""
-    Write-host "Endpoint Migration Status"-ForegroundColor Green
+    Write-host "***Endpoint Migration Status***"-ForegroundColor Green
     Write-host ""
-    Write-host $MigrationStatus.items -ForegroundColor Green
+    Write-host "Migration Destination:" $DestTenantSearch.name -ForegroundColor Green
+    Write-host ""
+    Write-host "Status :" $MigrationStatus.items.status -ForegroundColor Green
     Write-host ""
   
   Pause  
